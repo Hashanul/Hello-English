@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Banner, User, Instruction, Content
+from deep_translator import GoogleTranslator  # for automatic translation
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -7,59 +8,105 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email']
 
+
 class ContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Content
-        fields = ['content']
+        fields = '__all__'
+
+
+
+
 
 class InstructionSerializer(serializers.ModelSerializer):
-    contents = serializers.ListField(
+    contents_en = serializers.ListField(
+        child=serializers.CharField(), write_only=True, required=True
+    )
+    contents_bn = serializers.ListField(
         child=serializers.CharField(), write_only=True, required=False
     )
-    contents_output = serializers.SerializerMethodField(read_only=True)
+    # Read-only output
+    contents_en_output = serializers.SerializerMethodField(read_only=True)
+    contents_bn_output = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Instruction
-        fields = ['id', 'page', 'title', 'contents', 'contents_output']
+        fields = [
+            'id',
+            'page_en',
+            'title_en',
+            'page_bn',
+            'title_bn',
+            'contents_en',
+            'contents_bn',
+            'contents_en_output',
+            'contents_bn_output',
+        ]
 
-    def get_contents_output(self, obj):
-        return [c.content for c in obj.contents.all()]
+    # Output methods
+    def get_contents_en_output(self, obj):
+        return [c.content_en for c in obj.contents.all()]
 
+    def get_contents_bn_output(self, obj):
+        return [c.content_bn for c in obj.contents.all()]
+
+    # Create
     def create(self, validated_data):
-        contents_data = validated_data.pop('contents', [])
+        contents_en = validated_data.pop('contents_en', [])
+        contents_bn = validated_data.pop('contents_bn', [])
+
+        # Auto-translate if contents_bn is empty
+        if not contents_bn:
+            contents_bn = [GoogleTranslator(source='en', target='bn').translate(text) for text in contents_en]
+
         instruction = Instruction.objects.create(**validated_data)
-        for content_text in contents_data:
-            Content.objects.create(ins_title=instruction, content=content_text)
+
+        for en, bn in zip(contents_en, contents_bn):
+            Content.objects.create(
+                ins_title_en=instruction,
+                content_en=en,
+                content_bn=bn
+            )
+
         return instruction
 
+    # Update
+    def update(self, instance, validated_data):
+        contents_en = validated_data.pop('contents_en', None)
+        contents_bn = validated_data.pop('contents_bn', None)
+
+        # update instruction fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # update contents
+        if contents_en is not None:
+            instance.contents.all().delete()
+            if not contents_bn:
+                contents_bn = [GoogleTranslator(source='en', target='bn').translate(text) for text in contents_en]
+
+            for en, bn in zip(contents_en, contents_bn):
+                Content.objects.create(
+                    ins_title_en=instance,
+                    content_en=en,
+                    content_bn=bn
+                )
+
+        return instance
+
+    # Rename output fields
     def to_representation(self, instance):
-        """Rename output key 'contents_output' → 'contents'"""
-        representation = super().to_representation(instance)
-        representation['contents'] = representation.pop('contents_output')
-        return representation
+        rep = super().to_representation(instance)
+        rep['contents_en'] = rep.pop('contents_en_output')
+        rep['contents_bn'] = rep.pop('contents_bn_output')
+        return rep
 
 
 
 
 
 class BannerSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Banner
         fields = '__all__'
-        # fields = [
-        #     "id",
-        #     "title_english", "subtitle_english", "button_english",
-        #     "title_bangla", "subtitle_bangla", "button_bangla", "page", "image", "is_active", 'created_at'
-        # ]
-        # # Bangla fields are auto-generated — return them but don't require the client to send them
-        # read_only_fields = [
-        #     "title_bangla", "subtitle_bangla", "button_bangla", "created_at"
-        # ]
-
-
-
-
-
-    
-

@@ -44,40 +44,52 @@ class Banner(models.Model):
     
 
 class Instruction(models.Model):
-    page = models.PositiveIntegerField(null=True, blank=True)
-    title = models.CharField(max_length=255)
+    page_en = models.PositiveIntegerField(null=True, blank=True)
+    title_en = models.CharField(max_length=255, null=True, blank=True)
+
+    page_bn = models.CharField(max_length=50, null=True, blank=True)
+    title_bn = models.CharField(max_length=255, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        translator = GoogleTranslator(source='en', target='bn')
+
+        if not self.page_bn and self.page_en:
+            self.page_bn = translator.translate(str(self.page_en))
+
+        if not self.title_bn and self.title_en:
+            self.title_bn = translator.translate(self.title_en)
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Instruction Title: {self.title}"
+        return f"Instruction Title: {self.title_en}"
+        
 
 class Content(models.Model):
-    ins_title = models.ForeignKey(Instruction, related_name='contents', on_delete=models.CASCADE)
-    content = models.TextField()
+    ins_title_en = models.ForeignKey(Instruction, related_name='contents', on_delete=models.CASCADE)
+    content_en = models.TextField(null=True, blank=True)
+
+    ins_title_bn = models.CharField(max_length=255, null=True, blank=True)
+    content_bn = models.TextField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        translator = GoogleTranslator(source='en', target='bn')
+
+        if not self.ins_title_bn and self.ins_title_en and self.ins_title_en.title_en:
+            self.ins_title_bn = translator.translate(self.ins_title_en.title_en)
+
+        if not self.content_bn and self.content_en:
+            self.content_bn = translator.translate(self.content_en)
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Content: {self.content[:50]}"
+        return f"Content: {self.content_en[:50]}"
 
 
 
 
 
-
-
-
-# class Instruction(models.Model):
-    # page = models.PositiveIntegerField(null=True, blank=True)
-#     title = models.CharField(max_length=255)
-#     content = models.TextField(help_text="List of instruction lines")
-#     pdf = models.FileField(upload_to='instructions/pdfs/%Y/%m/%d/', blank=True, null=True )
-
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     class Meta:
-#         ordering = ['page']
-
-#     def __str__(self):
-#         return f"Page {self.page}: {self.title}"
     
 
 

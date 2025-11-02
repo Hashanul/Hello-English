@@ -15,7 +15,23 @@ SECRET_KEY = 'django-insecure-miy7u-0r&%m*n7ymj$1276j+l^_oy%^m-p=80-49ks#_k^85)x
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
+SITE_ID = 1
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3033",           # For local development
+    "http://92.168.88.245:8002",        # For frontend running from another PC using your backend IP
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3033",
+    "http://92.168.88.245:8002",
+]
 
 
 # Application definition
@@ -31,6 +47,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
+    'corsheaders',
     'djoser',
     'authentication',
     'quiz',
@@ -39,6 +56,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -101,15 +119,15 @@ AUTH_USER_MODEL = 'authentication.CustomUser'
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    # "ROTATE_REFRESH_TOKENS": False,
-    # "AUTH_HEADER_TYPES": ("Bearer",),
+    "ROTATE_REFRESH_TOKENS": False,
+    "AUTH_HEADER_TYPES": ("Bearer",),
     }
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        # 'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
 
 
     ),
@@ -159,19 +177,6 @@ DJOSER = {
         'user_create': 'authentication.serializers.CustomUserSerializer',
         'user': 'authentication.serializers.CustomUserSerializer',
         'current_user': 'authentication.serializers.CustomUserSerializer',
-
     },
 }
 
-
-
-# # DJOSER CONFIGURATION
-# DJOSER = {
-#     'USER_ID_FIELD': 'id',
-#     'LOGIN_FIELD': 'email',
-#     'SERIALIZERS': {
-#         'user_create': 'accounts.serializers.CustomUserCreateSerializer',
-#         'user': 'accounts.serializers.CustomUserSerializer',
-#         'current_user': 'accounts.serializers.CustomUserSerializer',
-#     },
-# }

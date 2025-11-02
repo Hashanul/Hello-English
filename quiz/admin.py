@@ -15,16 +15,16 @@ class ContentInline(admin.TabularInline):  # or use admin.StackedInline for vert
 
 @admin.register(Instruction)
 class InstructionTitleAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title']
-    search_fields = ['title']
+    list_display = ['id', 'title_en']
+    search_fields = ['title_en']
     inlines = [ContentInline]
 
 
 @admin.register(Content)
 class ContentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'ins_title', 'content']
-    search_fields = ['content']
-    list_filter = ['ins_title']
+    list_display = ['id', 'ins_title_en', 'content_en']
+    search_fields = ['content_en']
+    list_filter = ['ins_title_en']
 
 
 
